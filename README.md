@@ -1,3 +1,5 @@
+workshop members: Pablo Sanchez Dayanara Churaco
+
 GET http://localhost:3000/books HTTP/1.1
 
 ###
