@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book API Client</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .book-list, .book-detail, .book-form {
+      margin-bottom: 20px;
+    }
+    .book-form input, .book-form textarea {
+      display: block;
+      margin-bottom: 10px;
+    }
+    .book-form button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Book API Client</h1>
+  
+  <div class="book-list">
+    <h2>Books</h2>
+    <ul id="bookList"></ul>
+  </div>
+
+  <div class="book-detail">
+    <h2>Book Detail</h2>
+    <div id="bookDetail"></div>
+  </div>
+
+  <div class="book-form">
+    <h2>Add/Update Book</h2>
+    <form id="bookForm">
+      <input type="hidden" id="bookId" />
+      <label for="title">Title:</label>
+      <input type="text" id="title" required />
+      <label for="author">Author:</label>
+      <input type="text" id="author" required />
+      <label for="description">Description:</label>
+      <textarea id="description" required></textarea>
+      <button type="submit">Submit</button>
+    </form>
+  </div>
+
+  <script>
+    const bookListElement = document.getElementById('bookList');
+    const bookDetailElement = document.getElementById('bookDetail');
+    const bookFormElement = document.getElementById('bookForm');
+    const bookIdElement = document.getElementById('bookId');
+    const titleElement = document.getElementById('title');
+    const authorElement = document.getElementById('author');
+    const descriptionElement = document.getElementById('description');
+
+    // Fetch and display the list of books
+    function fetchBooks() {
+      fetch('http://localhost:3000/books')
+        .then(response => response.json())
+        .then(data => {
+          bookListElement.innerHTML = '';
+          data.forEach(book => {
+            const li = document.createElement('li');
+            li.textContent = `${book.title} by ${book.author}`;
+            li.addEventListener('click', () => fetchBookDetail(book.id));
+            bookListElement.appendChild(li);
+          });
+        });
+    }
+
+    // Fetch and display the details of a specific book
+    function fetchBookDetail(id) {
+      fetch(`http://localhost:3000/books/${id}`)
+        .then(response => response.json())
+        .then(book => {
+          bookDetailElement.innerHTML = `
+            <h3>${book.title}</h3>
+            <p><strong>Author:</strong> ${book.author}</p>
+            <p>${book.description}</p>
+            <button onclick="editBook(${book.id})">Edit</button>
+            <button onclick="deleteBook(${book.id})">Delete</button>
+          `;
+        });
+    }
+
+    // Add or update a book
+    bookFormElement.addEventListener('submit', event => {
+      event.preventDefault();
+      const id = bookIdElement.value;
+      const book = {
+        title: titleElement.value,
+        author: authorElement.value,
+        description: descriptionElement.value
+      };
+
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `http://localhost:3000/books/${id}` : 'http://localhost:3000/books';
+      fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(book)
+      })
+        .then(response => response.json())
+        .then(() => {
+          bookFormElement.reset();
+          fetchBooks();
+          bookDetailElement.innerHTML = '';
+        });
+    });
+
+    // Edit a book
+    function editBook(id) {
+      fetch(`http://localhost:3000/books/${id}`)
+        .then(response => response.json())
+        .then(book => {
+          bookIdElement.value = book.id;
+          titleElement.value = book.title;
+          authorElement.value = book.author;
+          descriptionElement.value = book.description;
+        });
+    }
+
+    // Delete a book
+    function deleteBook(id) {
+      fetch(`http://localhost:3000/books/${id}`, {
+        method: 'DELETE'
+      })
+        .then(() => {
+          fetchBooks();
+          bookDetailElement.innerHTML = '';
+        });
+    }
+
+    // Initial fetch of the book list
+    fetchBooks();
+  </script>
+</body>
+</html>
